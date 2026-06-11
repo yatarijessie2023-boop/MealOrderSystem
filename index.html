@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>今日便當訂購系統</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="banner">🍱 今日便當訂購系統</div>
+
+  <!-- 登入區 -->
+  <section id="loginPage">
+    <h2>登入系統</h2>
+
+    <label>身分：</label>
+    <select id="role">
+      <option value="user">使用者</option>
+      <option value="admin">管理員</option>
+    </select>
+
+    <br><br>
+
+    <label>姓名 / 帳號：</label>
+    <input type="text" id="loginName" placeholder="請輸入姓名或帳號">
+
+    <br><br>
+
+    <button onclick="login()">登入</button>
+  </section>
+
+  <!-- 使用者介面 -->
+  <section id="userPage" class="hidden">
+    <h2>使用者介面</h2>
+    <p>歡迎，<span id="userName"></span></p>
+
+    <button onclick="showUserSection('menuSection')">查看菜單</button>
+    <button onclick="showUserSection('orderSection')">訂購便當</button>
+    <button onclick="showUserSection('querySection')">查詢訂單</button>
+    <button class="logout" onclick="logout()">登出</button>
+
+    <div id="menuSection" class="card hidden">
+      <h3>菜單列表</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>餐點名稱</th>
+            <th>價格</th>
+          </tr>
+        </thead>
+        <tbody id="viewMenuList"></tbody>
+      </table>
+    </div>
+
+    <div id="orderSection" class="card hidden">
+      <h3>訂購便當</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>餐點名稱</th>
+            <th>單價</th>
+            <th>數量</th>
+            <th>小計</th>
+          </tr>
+        </thead>
+        <tbody id="orderMenuList"></tbody>
+      </table>
+
+      <div class="total-box">
+        總數量：<span id="totalQuantity">0</span> 份　
+        總金額：NT$ <span id="totalAmount">0</span>
+      </div>
+
+      <button onclick="submitOrder()">送出訂單</button>
+      <button class="clear" onclick="clearOrderInput()">清除</button>
+    </div>
+
+    <div id="querySection" class="card hidden">
+      <h3>查詢我的訂單</h3>
+      <button onclick="showMyOrders()">查詢訂單</button>
+      <div id="myOrderResult"></div>
+    </div>
+  </section>
+
+  <!-- 管理員介面 -->
+  <section id="adminPage" class="hidden">
+    <h2>管理員介面</h2>
+    <p>歡迎，管理員 <span id="adminName"></span></p>
+
+    <button onclick="showAdminSection('manageMenuSection')">管理菜單</button>
+    <button onclick="showAdminSection('allOrdersSection')">查看訂單</button>
+    <button onclick="showAdminSection('statsSection')">查看統計結果</button>
+    <button class="logout" onclick="logout()">登出</button>
+
+    <div id="manageMenuSection" class="card hidden">
+      <h3>管理菜單</h3>
+
+      <input type="text" id="newMenuName" placeholder="餐點名稱">
+      <input type="number" id="newMenuPrice" placeholder="價格">
+
+      <button onclick="addMenu()">新增餐點</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>餐點名稱</th>
+            <th>價格</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="adminMenuList"></tbody>
+      </table>
+    </div>
+
+    <div id="allOrdersSection" class="card hidden">
+      <h3>所有訂單</h3>
+      <button onclick="showAllOrders()">重新整理訂單</button>
+      <div id="allOrderResult"></div>
+    </div>
+
+    <div id="statsSection" class="card hidden">
+      <h3>統計結果</h3>
+      <button onclick="showStats()">查看統計</button>
+
+      <div class="stats">
+        <p>總訂單數：<span id="statOrderCount">0</span> 筆</p>
+        <p>總銷售數量：<span id="statTotalQuantity">0</span> 份</p>
+        <p>總銷售金額：NT$ <span id="statTotalAmount">0</span></p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
