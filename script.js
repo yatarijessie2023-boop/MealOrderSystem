@@ -12,6 +12,8 @@ let orders = [];
 
 let deadline = "";
 
+let editingOrderId = null;
+
 function login() {
   const role = document.getElementById("role").value;
   const name = document.getElementById("loginName").value.trim();
@@ -95,16 +97,13 @@ function setDeadline() {
 function updateDeadlineText() {
   const text = deadline === "" ? "尚未設定" : new Date(deadline).toLocaleString();
 
+  const homeText = document.getElementById("homeDeadlineText");
   const userText = document.getElementById("userDeadlineText");
   const adminText = document.getElementById("adminDeadlineText");
 
-  if (userText) {
-    userText.textContent = text;
-  }
-
-  if (adminText) {
-    adminText.textContent = text;
-  }
+  if (homeText) homeText.textContent = text;
+  if (userText) userText.textContent = text;
+  if (adminText) adminText.textContent = text;
 }
 
 function isAfterDeadline() {
@@ -337,32 +336,87 @@ function editOrder(orderId) {
     return;
   }
 
+  editingOrderId = orderId;
+
+  const list = document.getElementById("editOrderList");
+  list.innerHTML = "";
+
+  order.items.forEach(item => {
+    list.innerHTML += `
+      <tr>
+        <td>${item.name}</td>
+        <td>NT$ ${item.price}</td>
+        <td>
+          <input
+            type="number"
+            min="0"
+            value="${item.quantity}"
+            id="edit-qty-${item.name}"
+            oninput="calculateEditTotal()"
+          >
+        </td>
+        <td id="edit-subtotal-${item.name}">NT$ ${item.subtotal}</td>
+      </tr>
+    `;
+  });
+
+  calculateEditTotal();
+
+  document.getElementById("editOrderModal").classList.remove("hidden");
+}
+
+function calculateEditTotal() {
+  const order = orders.find(o => o.id === editingOrderId);
+
+  if (!order) return;
+
+  let totalQuantity = 0;
+  let totalAmount = 0;
+
+  order.items.forEach(item => {
+    const qtyInput = document.getElementById(`edit-qty-${item.name}`);
+    let qty = Number(qtyInput.value);
+
+    if (qty < 0 || isNaN(qty)) {
+      qty = 0;
+      qtyInput.value = 0;
+    }
+
+    const subtotal = qty * item.price;
+
+    document.getElementById(`edit-subtotal-${item.name}`).textContent = `NT$ ${subtotal}`;
+
+    totalQuantity += qty;
+    totalAmount += subtotal;
+  });
+
+  document.getElementById("editTotalQuantity").textContent = totalQuantity;
+  document.getElementById("editTotalAmount").textContent = totalAmount;
+}
+
+function saveEditOrder() {
+  const order = orders.find(o => o.id === editingOrderId);
+
+  if (!order) {
+    alert("找不到此訂單");
+    return;
+  }
+
   const beforeSummary = getOrderSummary(order);
 
   order.items.forEach(item => {
-    const newQty = prompt(
-      `${item.name} 目前數量：${item.quantity}\n請輸入新數量`,
-      item.quantity
-    );
+    const qty = Number(document.getElementById(`edit-qty-${item.name}`).value);
 
-    if (newQty !== null) {
-      const qty = Number(newQty);
-
-      if (qty < 0 || isNaN(qty)) {
-        alert("數量不可小於 0，且必須是數字");
-        return;
-      }
-
-      item.quantity = qty;
-      item.subtotal = item.quantity * item.price;
-    }
+    item.quantity = qty;
+    item.subtotal = item.quantity * item.price;
   });
 
   order.items = order.items.filter(item => item.quantity > 0);
 
   if (order.items.length === 0) {
     alert("訂單數量全為 0，系統將刪除此訂單");
-    orders = orders.filter(o => o.id !== orderId);
+    orders = orders.filter(o => o.id !== editingOrderId);
+    closeEditOrderModal();
     showMyOrders();
     return;
   }
@@ -387,7 +441,13 @@ function editOrder(orderId) {
 
   alert("訂單修改成功");
 
+  closeEditOrderModal();
   showMyOrders();
+}
+
+function closeEditOrderModal() {
+  editingOrderId = null;
+  document.getElementById("editOrderModal").classList.add("hidden");
 }
 
 function deleteOrder(orderId) {

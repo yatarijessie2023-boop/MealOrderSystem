@@ -29,6 +29,10 @@
 
     <button onclick="login()">登入</button>
 
+    <p class="deadline-text">
+      訂單截止時間：<span id="homeDeadlineText">尚未設定</span>
+    </p>
+
     <p class="notice">
       ※ 此為內部訂餐網站，僅收現金，請於截止時間後將現金繳交於總務
     </p>
@@ -144,6 +148,33 @@
     </div>
   </section>
 
+</div>
+
+<div id="editOrderModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>修改訂單</h3>
+    <p>請直接在下方完整訂單中修改數量</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>餐點名稱</th>
+          <th>單價</th>
+          <th>數量</th>
+          <th>小計</th>
+        </tr>
+      </thead>
+      <tbody id="editOrderList"></tbody>
+    </table>
+
+    <div class="total-box">
+      總數量：<span id="editTotalQuantity">0</span> 份　
+      總金額：NT$ <span id="editTotalAmount">0</span>
+    </div>
+
+    <button onclick="saveEditOrder()">儲存修改</button>
+    <button class="clear" onclick="closeEditOrderModal()">取消</button>
+  </div>
 </div>
 
 <script src="script.js"></script>
