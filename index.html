@@ -132,12 +132,21 @@
       <h3>統計結果</h3>
       <button onclick="showStats()">查看統計</button>
 
-      <div class="stats">
-        <p>總訂單數：<span id="statOrderCount">0</span> 筆</p>
-        <p>總銷售數量：<span id="statTotalQuantity">0</span> 份</p>
-        <p>總銷售金額：NT$ <span id="statTotalAmount">0</span></p>
-      </div>
-    </div>
+<div class="stats">
+  <p>總訂單數：<span id="statOrderCount">0</span> 筆</p>
+  <p>總銷售數量：<span id="statTotalQuantity">0</span> 份</p>
+  <p>總銷售金額：NT$ <span id="statTotalAmount">0</span></p>
+</div>
+
+<div class="stats">
+  <h3>各餐點訂購總數量 / 金額</h3>
+  <div id="itemStatsResult"></div>
+</div>
+
+<div class="stats">
+  <h3>各使用者應繳金額</h3>
+  <div id="userPaymentResult"></div>
+</div>
 
     <div id="deadlineSection" class="card hidden">
       <h3>設定訂單截止時間</h3>

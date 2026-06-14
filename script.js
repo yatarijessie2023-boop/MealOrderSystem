@@ -1,17 +1,15 @@
 let currentUser = "";
 
 let menu = [
-  { id: 1, name: "雞腿便當", price: 120 },
-  { id: 2, name: "排骨便當", price: 110 },
-  { id: 3, name: "滷肉飯", price: 60 },
-  { id: 4, name: "牛肉麵", price: 130 },
-  { id: 5, name: "紅茶", price: 30 }
+  { id: 1, name: "糖醋排骨便當 (店家：擄胃專家)", price: 120 },
+  { id: 2, name: "心太軟豬排便當 (店家：擄胃專家)", price: 120 },
+  { id: 3, name: "原汁牛肉麵 (店家：三商巧福)", price: 165 },
+  { id: 4, name: "原味鍋貼 (店家：八方雲集)/個", price: 10 },
+  { id: 5, name: "紅茶 (店家：50嵐)", price: 35 }
 ];
 
 let orders = [];
-
 let deadline = "";
-
 let editingOrderId = null;
 
 function login() {
@@ -24,30 +22,24 @@ function login() {
   }
 
   currentUser = name;
-
   document.getElementById("loginPage").classList.add("hidden");
 
   if (role === "user") {
     document.getElementById("userPage").classList.remove("hidden");
     document.getElementById("userName").textContent = name;
-
     updateDeadlineText();
-
     renderViewMenu();
     renderOrderMenu();
   } else {
     document.getElementById("adminPage").classList.remove("hidden");
     document.getElementById("adminName").textContent = name;
-
     updateDeadlineText();
-
     renderAdminMenu();
   }
 }
 
 function logout() {
   currentUser = "";
-
   document.getElementById("loginName").value = "";
 
   document.getElementById("loginPage").classList.remove("hidden");
@@ -88,9 +80,7 @@ function setDeadline() {
   }
 
   deadline = value;
-
   alert("截止時間設定成功");
-
   updateDeadlineText();
 }
 
@@ -107,9 +97,7 @@ function updateDeadlineText() {
 }
 
 function isAfterDeadline() {
-  if (deadline === "") {
-    return false;
-  }
+  if (deadline === "") return false;
 
   const now = new Date();
   const deadlineTime = new Date(deadline);
@@ -163,12 +151,11 @@ function calculateTotal() {
 
   menu.forEach(item => {
     const qtyInput = document.getElementById(`qty-${item.id}`);
-
     if (!qtyInput) return;
 
     let qty = Number(qtyInput.value);
 
-    if (qty < 0) {
+    if (qty < 0 || isNaN(qty)) {
       qty = 0;
       qtyInput.value = 0;
     }
@@ -602,12 +589,97 @@ function showStats() {
   let totalQuantity = 0;
   let totalAmount = 0;
 
+  let itemStats = {};
+  let userPayments = {};
+
   orders.forEach(order => {
     totalQuantity += order.totalQuantity;
     totalAmount += order.totalAmount;
+
+    if (!userPayments[order.customerName]) {
+      userPayments[order.customerName] = 0;
+    }
+
+    userPayments[order.customerName] += order.totalAmount;
+
+    order.items.forEach(item => {
+      if (!itemStats[item.name]) {
+        itemStats[item.name] = {
+          quantity: 0,
+          amount: 0
+        };
+      }
+
+      itemStats[item.name].quantity += item.quantity;
+      itemStats[item.name].amount += item.subtotal;
+    });
   });
 
   document.getElementById("statOrderCount").textContent = orders.length;
   document.getElementById("statTotalQuantity").textContent = totalQuantity;
   document.getElementById("statTotalAmount").textContent = totalAmount;
+
+  const itemResult = document.getElementById("itemStatsResult");
+  const userResult = document.getElementById("userPaymentResult");
+
+  if (orders.length === 0) {
+    itemResult.innerHTML = "<p>目前沒有餐點統計資料。</p>";
+    userResult.innerHTML = "<p>目前沒有繳費資料。</p>";
+    return;
+  }
+
+  let itemHtml = `
+    <table>
+      <thead>
+        <tr>
+          <th>餐點名稱</th>
+          <th>訂購總數量</th>
+          <th>銷售金額</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  Object.entries(itemStats).forEach(item => {
+    itemHtml += `
+      <tr>
+        <td>${item[0]}</td>
+        <td>${item[1].quantity} 份</td>
+        <td>NT$ ${item[1].amount}</td>
+      </tr>
+    `;
+  });
+
+  itemHtml += `
+      </tbody>
+    </table>
+  `;
+
+  let userHtml = `
+    <table>
+      <thead>
+        <tr>
+          <th>使用者</th>
+          <th>應繳金額</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  Object.entries(userPayments).forEach(user => {
+    userHtml += `
+      <tr>
+        <td>${user[0]}</td>
+        <td>NT$ ${user[1]}</td>
+      </tr>
+    `;
+  });
+
+  userHtml += `
+      </tbody>
+    </table>
+  `;
+
+  itemResult.innerHTML = itemHtml;
+  userResult.innerHTML = userHtml;
 }
