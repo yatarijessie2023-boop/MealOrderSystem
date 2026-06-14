@@ -220,7 +220,6 @@ function submitOrder() {
   orders.push(order);
 
   alert(`訂單建立成功！訂單編號：${order.id}`);
-
   clearOrderInput();
 }
 
@@ -260,21 +259,7 @@ function createUserOrderHTML(order) {
     itemText += `${item.name} × ${item.quantity}，小計 NT$ ${item.subtotal}<br>`;
   });
 
-  let historyText = "";
-
-  if (order.history.length > 0) {
-    historyText += `<div class="history-box"><strong>修改紀錄：</strong><br>`;
-
-    order.history.forEach((record, index) => {
-      historyText += `
-        第 ${index + 1} 次修改：${record.time}<br>
-        修改前：${record.before}<br>
-        修改後：${record.after}<br><br>
-      `;
-    });
-
-    historyText += `</div>`;
-  }
+  let historyText = createHistoryHTML(order);
 
   return `
     <div class="order-card">
@@ -292,6 +277,27 @@ function createUserOrderHTML(order) {
       <button class="delete" onclick="deleteOrder(${order.id})">刪除訂單</button>
     </div>
   `;
+}
+
+function createHistoryHTML(order) {
+  let historyText = "";
+
+  if (order.history.length > 0) {
+    historyText += `<div class="history-box"><strong>修改紀錄：</strong><br>`;
+
+    order.history.forEach((record, index) => {
+      historyText += `
+        第 ${index + 1} 次修改：${record.time}<br>
+        修改人：${record.editorRole || "使用者"} ${record.editor || "未記錄"}<br>
+        修改前：${record.before}<br>
+        修改後：${record.after}<br><br>
+      `;
+    });
+
+    historyText += `</div>`;
+  }
+
+  return historyText;
 }
 
 function getOrderSummary(order) {
@@ -348,40 +354,41 @@ function openEditOrderModal(order) {
   const list = document.getElementById("editOrderList");
   list.innerHTML = "";
 
-  order.items.forEach(item => {
+  menu.forEach(menuItem => {
+    const orderItem = order.items.find(item => item.name === menuItem.name);
+    const quantity = orderItem ? orderItem.quantity : 0;
+    const subtotal = quantity * menuItem.price;
+
     list.innerHTML += `
       <tr>
-        <td>${item.name}</td>
-        <td>NT$ ${item.price}</td>
+        <td>${menuItem.name}</td>
+        <td>NT$ ${menuItem.price}</td>
         <td>
           <input
             type="number"
             min="0"
-            value="${item.quantity}"
-            id="edit-qty-${item.name}"
+            value="${quantity}"
+            id="edit-qty-${menuItem.id}"
             oninput="calculateEditTotal()"
           >
         </td>
-        <td id="edit-subtotal-${item.name}">NT$ ${item.subtotal}</td>
+        <td id="edit-subtotal-${menuItem.id}">NT$ ${subtotal}</td>
       </tr>
     `;
   });
 
   calculateEditTotal();
-
   document.getElementById("editOrderModal").classList.remove("hidden");
 }
 
 function calculateEditTotal() {
-  const order = orders.find(o => o.id === editingOrderId);
-
-  if (!order) return;
-
   let totalQuantity = 0;
   let totalAmount = 0;
 
-  order.items.forEach(item => {
-    const qtyInput = document.getElementById(`edit-qty-${item.name}`);
+  menu.forEach(menuItem => {
+    const qtyInput = document.getElementById(`edit-qty-${menuItem.id}`);
+    if (!qtyInput) return;
+
     let qty = Number(qtyInput.value);
 
     if (qty < 0 || isNaN(qty)) {
@@ -389,9 +396,9 @@ function calculateEditTotal() {
       qtyInput.value = 0;
     }
 
-    const subtotal = qty * item.price;
+    const subtotal = qty * menuItem.price;
 
-    document.getElementById(`edit-subtotal-${item.name}`).textContent = `NT$ ${subtotal}`;
+    document.getElementById(`edit-subtotal-${menuItem.id}`).textContent = `NT$ ${subtotal}`;
 
     totalQuantity += qty;
     totalAmount += subtotal;
@@ -411,21 +418,30 @@ function saveEditOrder() {
 
   const beforeSummary = getOrderSummary(order);
 
-  order.items.forEach(item => {
-    const qty = Number(document.getElementById(`edit-qty-${item.name}`).value);
+  order.items = [];
 
-    item.quantity = qty;
-    item.subtotal = item.quantity * item.price;
+  menu.forEach(menuItem => {
+    const qtyInput = document.getElementById(`edit-qty-${menuItem.id}`);
+    const qty = Number(qtyInput.value);
+
+    if (qty > 0) {
+      order.items.push({
+        name: menuItem.name,
+        price: menuItem.price,
+        quantity: qty,
+        subtotal: qty * menuItem.price
+      });
+    }
   });
-
-  order.items = order.items.filter(item => item.quantity > 0);
 
   if (order.items.length === 0) {
     alert("訂單數量全為 0，系統將刪除此訂單");
     orders = orders.filter(o => o.id !== editingOrderId);
+
+    const wasAdmin = editingFromAdmin;
     closeEditOrderModal();
 
-    if (editingFromAdmin) {
+    if (wasAdmin) {
       showAllOrders();
       showStats();
     } else {
@@ -449,6 +465,8 @@ function saveEditOrder() {
 
   order.history.push({
     time: order.updateTime,
+    editor: currentUser,
+    editorRole: editingFromAdmin ? "管理員" : "使用者",
     before: beforeSummary,
     after: afterSummary
   });
@@ -456,7 +474,6 @@ function saveEditOrder() {
   alert("訂單修改成功");
 
   const wasAdmin = editingFromAdmin;
-
   closeEditOrderModal();
 
   if (wasAdmin) {
@@ -493,7 +510,6 @@ function deleteOrder(orderId) {
   orders = orders.filter(o => o.id !== orderId);
 
   alert("訂單已刪除");
-
   showMyOrders();
 }
 
@@ -610,21 +626,7 @@ function createOrderHTML(order) {
     itemText += `${item.name} × ${item.quantity}，小計 NT$ ${item.subtotal}<br>`;
   });
 
-  let historyText = "";
-
-  if (order.history.length > 0) {
-    historyText += `<div class="history-box"><strong>修改紀錄：</strong><br>`;
-
-    order.history.forEach((record, index) => {
-      historyText += `
-        第 ${index + 1} 次修改：${record.time}<br>
-        修改前：${record.before}<br>
-        修改後：${record.after}<br><br>
-      `;
-    });
-
-    historyText += `</div>`;
-  }
+  let historyText = createHistoryHTML(order);
 
   return `
     <div class="order-card">
