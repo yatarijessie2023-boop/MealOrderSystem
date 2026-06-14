@@ -10,6 +10,8 @@ let menu = [
 
 let orders = [];
 
+let deadline = "";
+
 function login() {
   const role = document.getElementById("role").value;
   const name = document.getElementById("loginName").value.trim();
@@ -20,22 +22,30 @@ function login() {
   }
 
   currentUser = name;
+
   document.getElementById("loginPage").classList.add("hidden");
 
   if (role === "user") {
     document.getElementById("userPage").classList.remove("hidden");
     document.getElementById("userName").textContent = name;
+
+    updateDeadlineText();
+
     renderViewMenu();
     renderOrderMenu();
   } else {
     document.getElementById("adminPage").classList.remove("hidden");
     document.getElementById("adminName").textContent = name;
+
+    updateDeadlineText();
+
     renderAdminMenu();
   }
 }
 
 function logout() {
   currentUser = "";
+
   document.getElementById("loginName").value = "";
 
   document.getElementById("loginPage").classList.remove("hidden");
@@ -52,16 +62,60 @@ function showUserSection(id) {
 
   renderViewMenu();
   renderOrderMenu();
+  updateDeadlineText();
 }
 
 function showAdminSection(id) {
   document.getElementById("manageMenuSection").classList.add("hidden");
   document.getElementById("allOrdersSection").classList.add("hidden");
   document.getElementById("statsSection").classList.add("hidden");
+  document.getElementById("deadlineSection").classList.add("hidden");
 
   document.getElementById(id).classList.remove("hidden");
 
   renderAdminMenu();
+  updateDeadlineText();
+}
+
+function setDeadline() {
+  const value = document.getElementById("deadlineInput").value;
+
+  if (value === "") {
+    alert("請選擇截止時間");
+    return;
+  }
+
+  deadline = value;
+
+  alert("截止時間設定成功");
+
+  updateDeadlineText();
+}
+
+function updateDeadlineText() {
+  const text = deadline === "" ? "尚未設定" : new Date(deadline).toLocaleString();
+
+  const userText = document.getElementById("userDeadlineText");
+  const adminText = document.getElementById("adminDeadlineText");
+
+  if (userText) {
+    userText.textContent = text;
+  }
+
+  if (adminText) {
+    adminText.textContent = text;
+  }
+}
+
+function isAfterDeadline() {
+  if (deadline === "") {
+    return false;
+  }
+
+  const now = new Date();
+  const deadlineTime = new Date(deadline);
+
+  return now > deadlineTime;
 }
 
 function renderViewMenu() {
@@ -110,6 +164,7 @@ function calculateTotal() {
 
   menu.forEach(item => {
     const qtyInput = document.getElementById(`qty-${item.id}`);
+
     if (!qtyInput) return;
 
     let qty = Number(qtyInput.value);
@@ -132,6 +187,11 @@ function calculateTotal() {
 }
 
 function submitOrder() {
+  if (isAfterDeadline()) {
+    alert("已超過訂單截止時間，無法新增訂單");
+    return;
+  }
+
   let items = [];
   let totalQuantity = 0;
   let totalAmount = 0;
@@ -165,7 +225,9 @@ function submitOrder() {
     items: items,
     totalQuantity: totalQuantity,
     totalAmount: totalAmount,
-    time: new Date().toLocaleString()
+    createTime: new Date().toLocaleString(),
+    updateTime: "",
+    history: []
   };
 
   orders.push(order);
@@ -211,14 +273,33 @@ function createUserOrderHTML(order) {
     itemText += `${item.name} × ${item.quantity}，小計 NT$ ${item.subtotal}<br>`;
   });
 
+  let historyText = "";
+
+  if (order.history.length > 0) {
+    historyText += `<div class="history-box"><strong>修改紀錄：</strong><br>`;
+
+    order.history.forEach((record, index) => {
+      historyText += `
+        第 ${index + 1} 次修改：${record.time}<br>
+        修改前：${record.before}<br>
+        修改後：${record.after}<br><br>
+      `;
+    });
+
+    historyText += `</div>`;
+  }
+
   return `
     <div class="order-card">
       <p><strong>訂單編號：</strong>${order.id}</p>
       <p><strong>顧客姓名：</strong>${order.customerName}</p>
-      <p><strong>訂購時間：</strong>${order.time}</p>
+      <p><strong>建立時間：</strong>${order.createTime}</p>
+      <p><strong>最後修改時間：</strong>${order.updateTime || "尚未修改"}</p>
       <p><strong>訂購內容：</strong><br>${itemText}</p>
       <p><strong>總數量：</strong>${order.totalQuantity} 份</p>
       <p><strong>總金額：</strong>NT$ ${order.totalAmount}</p>
+
+      ${historyText}
 
       <button onclick="editOrder(${order.id})">修改訂單</button>
       <button class="delete" onclick="deleteOrder(${order.id})">刪除訂單</button>
@@ -226,7 +307,24 @@ function createUserOrderHTML(order) {
   `;
 }
 
+function getOrderSummary(order) {
+  let text = "";
+
+  order.items.forEach(item => {
+    text += `${item.name} × ${item.quantity}，`;
+  });
+
+  text += `總數量 ${order.totalQuantity} 份，總金額 NT$ ${order.totalAmount}`;
+
+  return text;
+}
+
 function editOrder(orderId) {
+  if (isAfterDeadline()) {
+    alert("已超過訂單截止時間，無法修改訂單");
+    return;
+  }
+
   const order = orders.find(o => o.id === orderId);
 
   if (!order) {
@@ -238,6 +336,8 @@ function editOrder(orderId) {
     alert("只能修改自己的訂單");
     return;
   }
+
+  const beforeSummary = getOrderSummary(order);
 
   order.items.forEach(item => {
     const newQty = prompt(
@@ -275,9 +375,18 @@ function editOrder(orderId) {
     order.totalAmount += item.subtotal;
   });
 
-  order.time = new Date().toLocaleString() + "（已修改）";
+  const afterSummary = getOrderSummary(order);
+
+  order.updateTime = new Date().toLocaleString();
+
+  order.history.push({
+    time: order.updateTime,
+    before: beforeSummary,
+    after: afterSummary
+  });
 
   alert("訂單修改成功");
+
   showMyOrders();
 }
 
@@ -301,6 +410,7 @@ function deleteOrder(orderId) {
   orders = orders.filter(o => o.id !== orderId);
 
   alert("訂單已刪除");
+
   showMyOrders();
 }
 
@@ -397,14 +507,33 @@ function createOrderHTML(order) {
     itemText += `${item.name} × ${item.quantity}，小計 NT$ ${item.subtotal}<br>`;
   });
 
+  let historyText = "";
+
+  if (order.history.length > 0) {
+    historyText += `<div class="history-box"><strong>修改紀錄：</strong><br>`;
+
+    order.history.forEach((record, index) => {
+      historyText += `
+        第 ${index + 1} 次修改：${record.time}<br>
+        修改前：${record.before}<br>
+        修改後：${record.after}<br><br>
+      `;
+    });
+
+    historyText += `</div>`;
+  }
+
   return `
     <div class="order-card">
       <p><strong>訂單編號：</strong>${order.id}</p>
       <p><strong>顧客姓名：</strong>${order.customerName}</p>
-      <p><strong>訂購時間：</strong>${order.time}</p>
+      <p><strong>建立時間：</strong>${order.createTime}</p>
+      <p><strong>最後修改時間：</strong>${order.updateTime || "尚未修改"}</p>
       <p><strong>訂購內容：</strong><br>${itemText}</p>
       <p><strong>總數量：</strong>${order.totalQuantity} 份</p>
       <p><strong>總金額：</strong>NT$ ${order.totalAmount}</p>
+
+      ${historyText}
     </div>
   `;
 }

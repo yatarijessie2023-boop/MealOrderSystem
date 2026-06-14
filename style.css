@@ -73,6 +73,15 @@ p {
   line-height: 1.6;
 }
 
+.deadline-text {
+  background: #fff0dc;
+  color: #c65f2b;
+  padding: 14px 18px;
+  border-radius: 16px;
+  font-weight: bold;
+  text-align: center;
+}
+
 input,
 select {
   font-size: 22px;
@@ -197,6 +206,14 @@ input[type="number"] {
   margin-top: 20px;
   font-size: 22px;
   box-shadow: 0 4px 12px rgba(120, 80, 40, 0.08);
+}
+
+.history-box {
+  background: #fff3e6;
+  border-left: 8px solid #f2a65a;
+  padding: 14px;
+  border-radius: 14px;
+  margin-top: 14px;
 }
 
 .stats {

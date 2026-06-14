@@ -30,14 +30,14 @@
     <button onclick="login()">登入</button>
 
     <p class="notice">
-      ※ 此為內部訂餐網站，僅收現金。
-        請於截止時間後將現金繳交於總務。
+      ※ 此為內部訂餐網站，僅收現金，請於截止時間後將現金繳交於總務
     </p>
   </section>
 
   <section id="userPage" class="hidden">
     <h2>使用者介面</h2>
     <p>歡迎，<span id="userName"></span></p>
+    <p class="deadline-text">訂單截止時間：<span id="userDeadlineText"></span></p>
 
     <button onclick="showUserSection('menuSection')">查看菜單</button>
     <button onclick="showUserSection('orderSection')">訂購便當</button>
@@ -95,6 +95,7 @@
     <button onclick="showAdminSection('manageMenuSection')">管理菜單</button>
     <button onclick="showAdminSection('allOrdersSection')">查看訂單</button>
     <button onclick="showAdminSection('statsSection')">查看統計結果</button>
+    <button onclick="showAdminSection('deadlineSection')">設定截止時間</button>
     <button class="logout" onclick="logout()">登出</button>
 
     <div id="manageMenuSection" class="card hidden">
@@ -132,6 +133,14 @@
         <p>總銷售數量：<span id="statTotalQuantity">0</span> 份</p>
         <p>總銷售金額：NT$ <span id="statTotalAmount">0</span></p>
       </div>
+    </div>
+
+    <div id="deadlineSection" class="card hidden">
+      <h3>設定訂單截止時間</h3>
+      <p>目前截止時間：<span id="adminDeadlineText"></span></p>
+
+      <input type="datetime-local" id="deadlineInput">
+      <button onclick="setDeadline()">儲存截止時間</button>
     </div>
   </section>
 
