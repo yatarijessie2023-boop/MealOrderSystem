@@ -11,6 +11,7 @@ let menu = [
 let orders = [];
 let deadline = "";
 let editingOrderId = null;
+let editingFromAdmin = false;
 
 function login() {
   const role = document.getElementById("role").value;
@@ -324,7 +325,26 @@ function editOrder(orderId) {
   }
 
   editingOrderId = orderId;
+  editingFromAdmin = false;
 
+  openEditOrderModal(order);
+}
+
+function adminEditOrder(orderId) {
+  const order = orders.find(o => o.id === orderId);
+
+  if (!order) {
+    alert("找不到此訂單");
+    return;
+  }
+
+  editingOrderId = orderId;
+  editingFromAdmin = true;
+
+  openEditOrderModal(order);
+}
+
+function openEditOrderModal(order) {
   const list = document.getElementById("editOrderList");
   list.innerHTML = "";
 
@@ -404,7 +424,14 @@ function saveEditOrder() {
     alert("訂單數量全為 0，系統將刪除此訂單");
     orders = orders.filter(o => o.id !== editingOrderId);
     closeEditOrderModal();
-    showMyOrders();
+
+    if (editingFromAdmin) {
+      showAllOrders();
+      showStats();
+    } else {
+      showMyOrders();
+    }
+
     return;
   }
 
@@ -428,12 +455,21 @@ function saveEditOrder() {
 
   alert("訂單修改成功");
 
+  const wasAdmin = editingFromAdmin;
+
   closeEditOrderModal();
-  showMyOrders();
+
+  if (wasAdmin) {
+    showAllOrders();
+    showStats();
+  } else {
+    showMyOrders();
+  }
 }
 
 function closeEditOrderModal() {
   editingOrderId = null;
+  editingFromAdmin = false;
   document.getElementById("editOrderModal").classList.add("hidden");
 }
 
@@ -459,6 +495,26 @@ function deleteOrder(orderId) {
   alert("訂單已刪除");
 
   showMyOrders();
+}
+
+function adminDeleteOrder(orderId) {
+  const order = orders.find(o => o.id === orderId);
+
+  if (!order) {
+    alert("找不到此訂單");
+    return;
+  }
+
+  if (!confirm("管理員確定要刪除此訂單嗎？")) {
+    return;
+  }
+
+  orders = orders.filter(o => o.id !== orderId);
+
+  alert("管理員已刪除此訂單");
+
+  showAllOrders();
+  showStats();
 }
 
 function renderAdminMenu() {
@@ -581,6 +637,9 @@ function createOrderHTML(order) {
       <p><strong>總金額：</strong>NT$ ${order.totalAmount}</p>
 
       ${historyText}
+
+      <button onclick="adminEditOrder(${order.id})">修改訂單</button>
+      <button class="delete" onclick="adminDeleteOrder(${order.id})">刪除訂單</button>
     </div>
   `;
 }
