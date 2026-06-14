@@ -112,7 +112,13 @@ function calculateTotal() {
     const qtyInput = document.getElementById(`qty-${item.id}`);
     if (!qtyInput) return;
 
-    const qty = Number(qtyInput.value);
+    let qty = Number(qtyInput.value);
+
+    if (qty < 0) {
+      qty = 0;
+      qtyInput.value = 0;
+    }
+
     const subtotal = qty * item.price;
 
     document.getElementById(`subtotal-${item.id}`).textContent = `NT$ ${subtotal}`;
@@ -194,8 +200,108 @@ function showMyOrders() {
   }
 
   myOrders.forEach(order => {
-    result.innerHTML += createOrderHTML(order);
+    result.innerHTML += createUserOrderHTML(order);
   });
+}
+
+function createUserOrderHTML(order) {
+  let itemText = "";
+
+  order.items.forEach(item => {
+    itemText += `${item.name} × ${item.quantity}，小計 NT$ ${item.subtotal}<br>`;
+  });
+
+  return `
+    <div class="order-card">
+      <p><strong>訂單編號：</strong>${order.id}</p>
+      <p><strong>顧客姓名：</strong>${order.customerName}</p>
+      <p><strong>訂購時間：</strong>${order.time}</p>
+      <p><strong>訂購內容：</strong><br>${itemText}</p>
+      <p><strong>總數量：</strong>${order.totalQuantity} 份</p>
+      <p><strong>總金額：</strong>NT$ ${order.totalAmount}</p>
+
+      <button onclick="editOrder(${order.id})">修改訂單</button>
+      <button class="delete" onclick="deleteOrder(${order.id})">刪除訂單</button>
+    </div>
+  `;
+}
+
+function editOrder(orderId) {
+  const order = orders.find(o => o.id === orderId);
+
+  if (!order) {
+    alert("找不到此訂單");
+    return;
+  }
+
+  if (order.customerName !== currentUser) {
+    alert("只能修改自己的訂單");
+    return;
+  }
+
+  order.items.forEach(item => {
+    const newQty = prompt(
+      `${item.name} 目前數量：${item.quantity}\n請輸入新數量`,
+      item.quantity
+    );
+
+    if (newQty !== null) {
+      const qty = Number(newQty);
+
+      if (qty < 0 || isNaN(qty)) {
+        alert("數量不可小於 0，且必須是數字");
+        return;
+      }
+
+      item.quantity = qty;
+      item.subtotal = item.quantity * item.price;
+    }
+  });
+
+  order.items = order.items.filter(item => item.quantity > 0);
+
+  if (order.items.length === 0) {
+    alert("訂單數量全為 0，系統將刪除此訂單");
+    orders = orders.filter(o => o.id !== orderId);
+    showMyOrders();
+    return;
+  }
+
+  order.totalQuantity = 0;
+  order.totalAmount = 0;
+
+  order.items.forEach(item => {
+    order.totalQuantity += item.quantity;
+    order.totalAmount += item.subtotal;
+  });
+
+  order.time = new Date().toLocaleString() + "（已修改）";
+
+  alert("訂單修改成功");
+  showMyOrders();
+}
+
+function deleteOrder(orderId) {
+  const order = orders.find(o => o.id === orderId);
+
+  if (!order) {
+    alert("找不到此訂單");
+    return;
+  }
+
+  if (order.customerName !== currentUser) {
+    alert("只能刪除自己的訂單");
+    return;
+  }
+
+  if (!confirm("確定要刪除此訂單嗎？")) {
+    return;
+  }
+
+  orders = orders.filter(o => o.id !== orderId);
+
+  alert("訂單已刪除");
+  showMyOrders();
 }
 
 function renderAdminMenu() {

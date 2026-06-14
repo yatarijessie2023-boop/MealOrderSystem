@@ -11,7 +11,6 @@
 
   <div class="banner">🍱 今日便當訂購系統</div>
 
-  <!-- 登入區 -->
   <section id="loginPage">
     <h2>登入系統</h2>
 
@@ -29,9 +28,13 @@
     <br><br>
 
     <button onclick="login()">登入</button>
+
+    <p class="notice">
+      ※ 此為內部訂餐網站，僅收現金。
+        請於截止時間後將現金繳交於總務。
+    </p>
   </section>
 
-  <!-- 使用者介面 -->
   <section id="userPage" class="hidden">
     <h2>使用者介面</h2>
     <p>歡迎，<span id="userName"></span></p>
@@ -56,6 +59,7 @@
 
     <div id="orderSection" class="card hidden">
       <h3>訂購便當</h3>
+
       <table>
         <thead>
           <tr>
@@ -84,7 +88,6 @@
     </div>
   </section>
 
-  <!-- 管理員介面 -->
   <section id="adminPage" class="hidden">
     <h2>管理員介面</h2>
     <p>歡迎，管理員 <span id="adminName"></span></p>
